@@ -1,5 +1,8 @@
-%% File: `plainnat.bst'
-%% A modification of `plain.bst' for use with natbib package 
+%% File: `plainnatsimple.bst'
+%% A modification of `plainnat.bst', with special rules for printing stuff in the bibliography, for
+%% compatibility with ACL-style articles.
+%%
+%% queirozfcom@gmail.com
 %%
 %% Copyright 1993-2007 Patrick W Daly
 %% Max-Planck-Institut f\"ur Sonnensystemforschung
@@ -30,7 +33,7 @@
  % For version 7.0 of `natbib.sty', the KEY field replaces missing
  %   authors/editors, and the date is left blank in \bibitem.
  %
- % Includes field EID for the sequence/citation number of electronic journals
+ % Includes field  for the sequence/citation number of electronic journals
  %  which is used instead of page numbers.
  %
  % Includes fields ISBN and ISSN.
@@ -50,7 +53,7 @@ ENTRY
     booktitle
     chapter
     doi
-    eid
+    
     edition
     editor
     howpublished
@@ -213,6 +216,54 @@ FUNCTION {emphasize}
 
 INTEGERS { nameptr namesleft numnames }
 
+FUNCTION {new.format.names}
+{ 's :=
+  "" 't :=
+  #1 'nameptr :=
+  s num.names$ 'numnames :=
+  numnames 'namesleft :=
+    { namesleft #0 > }
+    { s nameptr
+      "{vv~}{ll}{, jj}{, f{.}.}"
+      format.name$
+      't :=
+      nameptr #1 >
+        {
+          nameptr #1
+          #1 + =
+          numnames #2
+          > and
+            { "others" 't :=
+              #1 'namesleft := }
+            'skip$
+          if$
+          namesleft #1 >
+            { ", " * t * }
+            {
+              s nameptr "{ll}" format.name$ duplicate$ "others" =
+                { 't := }
+                { pop$ }
+              if$
+              t "others" =
+                {
+                  " et~al" *
+                }
+                {
+                  " and "
+                  * t *
+                }
+              if$
+            }
+          if$
+        }
+        't
+      if$
+      nameptr #1 + 'nameptr :=
+      namesleft #1 - 'namesleft :=
+    }
+  while$
+}
+
 FUNCTION {format.names}
 { 's :=
   #1 'nameptr :=
@@ -271,28 +322,28 @@ FUNCTION {format.editors}
 FUNCTION {format.isbn}
 { isbn empty$
     { "" }
-    { new.block "ISBN " isbn * }
+    { "" }
   if$
 }
 
 FUNCTION {format.issn}
 { issn empty$
     { "" }
-    { new.block "ISSN " issn * }
+    { "" }
   if$
 }
 
 FUNCTION {format.url}
 { url empty$
     { "" }
-    { new.block "URL \url{" url * "}" * }
+    { new.block "Available at \url{" url * "}" * }
   if$
 }
 
 FUNCTION {format.doi}
 { doi empty$
     { "" }
-    { new.block "\doi{" doi * "}" * }
+    { "" }
   if$
 }
 
@@ -451,13 +502,7 @@ FUNCTION {either.or.check}
 FUNCTION {format.bvolume}
 { volume empty$
     { "" }
-    { "volume" volume tie.or.space.connect
-      series empty$
-        'skip$
-        { " of " * series emphasize * }
-      if$
-      "volume and number" number either.or.check
-    }
+    { "" }
   if$
 }
 
@@ -517,18 +562,14 @@ FUNCTION {multi.page.check}
 FUNCTION {format.pages}
 { pages empty$
     { "" }
-    { pages multi.page.check
-        { "pages" pages n.dashify tie.or.space.connect }
-        { "page" pages tie.or.space.connect }
-      if$
-    }
+    { "" }
   if$
 }
 
 FUNCTION {format.eid}
 { eid empty$
     { "" }
-    { "art." eid tie.or.space.connect }
+    { "" }
   if$
 }
 
@@ -701,15 +742,16 @@ FUNCTION {article}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.title "title" output.check
+  format.date "year" output.check
   new.block
+  format.title "title" output.check
   crossref missing$
     { journal emphasize "journal" output.check
       eid empty$
         { format.vol.num.pages output }
         { format.vol.num.eid output }
       if$
-      format.date "year" output.check
+      
     }
     { format.article.crossref output.nonnull
       eid empty$
@@ -720,7 +762,6 @@ FUNCTION {article}
   if$
   format.issn output
   format.doi output
-  format.url output
   new.block
   note output
   fin.entry
@@ -740,6 +781,8 @@ FUNCTION {book}
     }
   if$
   new.block
+  format.date "year" output.check
+  new.block
   format.btitle "title" output.check
   crossref missing$
     { format.bvolume output
@@ -754,10 +797,8 @@ FUNCTION {book}
     }
   if$
   format.edition output
-  format.date "year" output.check
   format.isbn output
   format.doi output
-  format.url output
   new.block
   note output
   fin.entry
@@ -767,6 +808,7 @@ FUNCTION {booklet}
 { output.bibitem
   format.authors output
   author format.key output
+  format.date "year" output.check
   new.block
   format.title "title" output.check
   howpublished address new.block.checkb
@@ -775,7 +817,6 @@ FUNCTION {booklet}
   format.date output
   format.isbn output
   format.doi output
-  format.url output
   new.block
   note output
   fin.entry
@@ -795,6 +836,8 @@ FUNCTION {inbook}
     }
   if$
   new.block
+  format.date "year" output.check
+  new.block
   format.btitle "title" output.check
   crossref missing$
     { format.bvolume output
@@ -811,10 +854,8 @@ FUNCTION {inbook}
     }
   if$
   format.edition output
-  format.date "year" output.check
   format.isbn output
   format.doi output
-  format.url output
   new.block
   note output
   fin.entry
@@ -825,6 +866,8 @@ FUNCTION {incollection}
   format.authors "author" output.check
   author format.key output
   new.block
+  format.date "year" output.check
+  new.block
   format.title "title" output.check
   new.block
   crossref missing$
@@ -834,9 +877,7 @@ FUNCTION {incollection}
       format.chapter.pages output
       new.sentence
       publisher "publisher" output.check
-      address output
       format.edition output
-      format.date "year" output.check
     }
     { format.incoll.inproc.crossref output.nonnull
       format.chapter.pages output
@@ -844,7 +885,6 @@ FUNCTION {incollection}
   if$
   format.isbn output
   format.doi output
-  format.url output
   new.block
   note output
   fin.entry
@@ -854,6 +894,8 @@ FUNCTION {inproceedings}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
+  new.block
+  format.date "year" output.check
   new.block
   format.title "title" output.check
   new.block
@@ -866,10 +908,8 @@ FUNCTION {inproceedings}
         { organization publisher new.sentence.checkb
           organization output
           publisher output
-          format.date "year" output.check
         }
-        { address output.nonnull
-          format.date "year" output.check
+        { 
           new.sentence
           organization output
           publisher output
@@ -882,7 +922,6 @@ FUNCTION {inproceedings}
   if$
   format.isbn output
   format.doi output
-  format.url output
   new.block
   note output
   fin.entry
@@ -895,13 +934,12 @@ FUNCTION {manual}
   format.authors output
   author format.key output
   new.block
+  format.date "year" output.check
+  new.block
   format.btitle "title" output.check
   organization address new.block.checkb
   organization output
-  address output
   format.edition output
-  format.date output
-  format.url output
   new.block
   note output
   fin.entry
@@ -912,13 +950,13 @@ FUNCTION {mastersthesis}
   format.authors "author" output.check
   author format.key output
   new.block
+  format.date "year" output.check
+  new.block
   format.title "title" output.check
   new.block
   "Master's thesis" format.thesis.type output.nonnull
   school "school" output.check
   address output
-  format.date "year" output.check
-  format.url output
   new.block
   note output
   fin.entry
@@ -928,11 +966,12 @@ FUNCTION {misc}
 { output.bibitem
   format.authors output
   author format.key output
+  format.date "year" output.check
+  new.block
   title howpublished new.block.checkb
   format.title output
   howpublished new.block.checka
   howpublished output
-  format.date output
   format.issn output
   format.url output
   new.block
@@ -946,13 +985,13 @@ FUNCTION {phdthesis}
   format.authors "author" output.check
   author format.key output
   new.block
+  format.date "year" output.check
+  new.block
   format.btitle "title" output.check
   new.block
   "PhD thesis" format.thesis.type output.nonnull
   school "school" output.check
   address output
-  format.date "year" output.check
-  format.url output
   new.block
   note output
   fin.entry
@@ -963,17 +1002,17 @@ FUNCTION {proceedings}
   format.editors output
   editor format.key output
   new.block
+  format.date "year" output.check
+  new.block
   format.btitle "title" output.check
   format.bvolume output
   format.number.series output
   address output
-  format.date "year" output.check
   new.sentence
   organization output
   publisher output
   format.isbn output
   format.doi output
-  format.url output
   new.block
   note output
   fin.entry
@@ -983,6 +1022,8 @@ FUNCTION {techreport}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
+  new.block
+  format.date "year" output.check
   new.block
   format.title "title" output.check
   new.block
@@ -1000,6 +1041,8 @@ FUNCTION {unpublished}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
+  new.block
+  format.date "year" output.check
   new.block
   format.title "title" output.check
   new.block
